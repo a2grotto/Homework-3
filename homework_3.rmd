@@ -1,0 +1,237 @@
+---
+title: "Homework_3"
+author: "Adam Grottoli"
+date: "January 25, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/Adam/Documents/R/R practice/BioStats/Homework-3")
+library(ggplot2)
+library(car)
+```
+#PART I
+##1.
+```{r}
+killarney=read.csv("Killarney.csv")
+```
+##2
+```{r}
+ggplot(data=killarney, aes(x=status, y = Diversity)) +
+  geom_boxplot()+
+  labs(x='Status', y='Lake Diversity')
+```
+
+Figure 1. Plankton diversity in Killarney lakes
+
+##3.
+```{r}
+lake_anova=aov(killarney$Diversity~killarney$status)
+summary(lake_anova)
+```
+##4.
+H~0~: There is no varience in the diversity of plankton between the lakes with different acidity conditions.
+
+##5.
+The observed test statistic, or F value, is 16.41. The p-value is 5.43e-06.
+
+##6.
+p<0.05 so we reject the null hypothesis and there was significant difference between the lakes with different acidity conditions.
+
+##7.
+```{r}
+TukeyHSD(aov(killarney$Diversity~killarney$status)) 
+```
+
+##8.
+Based on the Tukey HSD test, acidic lakes are signficantly different from both nuetral lakes and recoverd lakes. 
+
+##9.
+```{r}
+shapiro.test(lake_anova$residuals) 
+```
+```{r}
+leveneTest(killarney$Diversity, killarney$status) 
+
+```
+
+Since p<0.05 for the Shapiro-Wilk test the data is not normally distributed and the assumptions required for an anova are not met for untransformed data.
+
+
+```{r}
+killarney$trfm_diversity=log1p(killarney$Diversity)
+lake_anova=aov(killarney$trfm_diversity~killarney$status)
+summary(lake_anova)
+TukeyHSD(aov(killarney$trfm_diversity~killarney$status)) 
+```
+If the diversity is log transformed than the assumptions are met.
+Although the F and p values for the ANOVA and Tuckey's test are different with the transformed data, the conclusions are the same.
+
+```{r}
+killarney$trfm_diversity=log(killarney$Diversity)
+shapiro.test(lake_anova$residuals)
+leveneTest(killarney$trfm_diversity, killarney$status)
+```
+Since p>0.05 for the Shapiro-Wilk and the Levene's test the data is normally distributed and homoscedastic.
+
+##10.
+###a)
+```{r}
+can_risk=read.csv('esoph.csv')
+risk_fact=aov(can_risk$ncases~can_risk$Alcohol*can_risk$Tobacco)
+summary(risk_fact)
+```
+###b)
+Based on the ANOVA neither alcohol, tobacco or the interaction of age and tobacco had a significant effect on the risk of esophogus cancer.
+
+
+##11.
+###a)
+```{r}
+age_tob=aov(can_risk$ncases~can_risk$Age*can_risk$Tobacco)
+summary(age_tob)
+```
+
+###b)
+```{r}
+TukeyHSD(age_tob) 
+```
+
+###c)
+People aged 25-34 were significantly different from people aged 55-64 and people aged 65-74.
+People aged 35-44 were significantly different from people aged 55-64 and people aged 65-74.
+People aged 75+ were significantly different from people aged 55-64.
+
+People who consumed 0-9 g/ day of tobacco were significantly different from people who comsumed 0-20g/day and people who consumed 30+ g/day.
+
+
+##12.
+###a)
+```{r}
+age_alc=aov(can_risk$ncases~can_risk$Age*can_risk$Alcohol)
+summary(age_alc)
+```
+###b)
+```{r}
+library('dplyr')
+can_risk %>% 
+  group_by(Age, Alcohol) %>% 
+  summarise(can_groups = mean(ncases)) -> group_risk
+
+
+group_risk %>% 
+    ggplot() +
+    aes(x = Age, y = can_groups, colour = Alcohol) +
+    geom_line(aes(group = Alcohol)) +
+  labs(y='Number of Study Participants with Cancer', x='Age', colour = "Alcohol Consumption (g/day)")+
+    geom_point()
+```
+
+Figure 2. Proportion of study paticipants diagnosed with esophageal 
+
+The results of the ANOVA suggest age and alcohol consumption both have an effect on cancer risk individually and the interacting effect of age and alcohol have an effect on cancer risk.
+
+#PART II
+##13
+###a)
+```{r}
+mtcars
+ ggplot(mtcars, aes(x=wt, y=mpg))+
+ geom_point(colour='blue')+
+ labs(x='Weight X 1000 lbs', y= 'Miles/Gallon')
+```
+Figure 3. Fuel effiency of cars in relation to thier weight
+ 
+###b)
+```{r}
+mpg=mtcars$mpg
+wt=mtcars$wt
+fit.wt_mpg=glm(mpg~wt)
+summary.lm(fit.wt_mpg)
+```
+
+###c)
+```{r}
+ ggplot()+
+ geom_smooth(data=fit.wt_mpg, method='glm', aes(y=mpg, x=wt))+ geom_point(data=mtcars, aes(y=mpg, x=wt)) +
+ labs(x='Weight X 1000 lbs', y= 'Miles/Gallon')
+```
+Figure 4. Fuel effiency of cars in relation to thier weight
+
+The equation of the lines is f(wt)=37.2851 -5.3445(wt)
+
+###d)
+Gas mileage is significantly related to car weight because p = 1.29e-10 which is less than 0.05.
+
+##14.
+```{r}
+hp=mtcars$hp
+qsec=mtcars$qsec
+ggplot(mtcars, aes(x=hp, y=qsec))+
+  geom_point(colour='blue')+
+  labs(x= 'Horsepower', y='Quarter-mile time (seconds)')
+```
+Figure 5. Time taken for a vehicle to travel a quarter mile in relation to its horsepower
+
+###b)
+```{r}
+fit.qsec_hp=glm(qsec~hp)
+summary.lm(fit.qsec_hp)
+```
+
+###c)
+
+
+```{r}
+ ggplot()+
+ geom_smooth(data=fit.qsec_hp, method='glm', aes(y=qsec, x=hp))+ geom_point(data=mtcars, aes(y=qsec, x=hp)) +
+ labs(x='Horsepower', y= 'Quarter-mile time (seconds)')
+```
+Figure 6. Time taken for a vehicle to travel a quarter mile in relation to its horsepower
+
+The equation of the line is f(hp)=20.556354-0.018458(hp)
+
+###d)
+```{r}
+20.556354-0.018458*300
+
+```
+According to the model the quarter-mile time of a car with 300 horsepower would be 15.02 seconds.
+
+###e)
+Quarter-mile time is significantly related to horsepower given the p value of 5.77e-06 is less than 0.05.
+
+
+```{r}
+library(gvlma)
+gvlma(lm(fit.qsec_hp))
+```
+The data did not meet the required assumptions because the p value for kurtosis was less than 0.05
+
+##15.
+###b)
+```{r}
+bat_mass=read.csv('fa_mass.csv')
+ggplot()+ 
+   geom_smooth(data=bat_mass, method='glm',aes(x=bat_mass$fa, y=bat_mass$mass))+
+   geom_point(data=bat_mass, aes(x=bat_mass$fa, y=bat_mass$mass))+
+labs(x='Forearm Length (mm)', y='Mass (g)')
+```
+
+Figure 7. Relationship between forearm length and mass in bats captured in Newfoundland  
+
+###c)
+```{r}
+fit.mass_fa=glm(bat_mass$mass~bat_mass$fa)
+summary.lm(fit.mass_fa)
+```
+
+```{r}
+sqrt(0.1702)
+```
+The correlation coefficient is 0.412553.
+
+###d)
+The correlation is significant with a p value of 2.2e-16.
+
